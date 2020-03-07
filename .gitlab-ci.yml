@@ -1,0 +1,2 @@
+include:
+  - remote: 'https://git.virtuellewolke.de/generic/ci-templates/raw/master/maven+docker.gitlab-ci.yml'
