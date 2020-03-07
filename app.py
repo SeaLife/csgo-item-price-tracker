@@ -1,5 +1,4 @@
 # Counter-Strike Global Offensive Price Tracker
-import time
 
 from database import Database, PriceHistory
 from price_resolver import SteamResolver, SkinBaronResolver
