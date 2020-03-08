@@ -11,11 +11,12 @@ for weapon in weapons:
     print(f'>> {weapon.weapon_name} ({weapon.wear_from}% -> {weapon.wear_to}%)')
 
     steam_price = SteamResolver.resolve_price(weapon)
-    db.save_resolved_price(PriceHistory('STEAM', steam_price))
-    sb_price = SkinBaronResolver.resolve_price(weapon)
-    db.save_resolved_price(PriceHistory('SKINBARON', sb_price))
+    if steam_price is not None:
+        db.save_resolved_price(PriceHistory('STEAM', steam_price))
+        print(f'STEAM      {steam_price.lowest_price}€ (lowest) - {steam_price.volume} in Market.')
 
-    print(f'STEAM      {steam_price.lowest_price}€ (lowest) - {steam_price.volume} in Market.')
-    print(f'SKIN BARON {sb_price.lowest_price}€ (lowest) - {sb_price.volume} in Market.')
-    print(f'SKIN BARON {sb_price.highest_price}€ (highest) - {sb_price.volume} in Market.')
-    print("")
+    sb_price = SkinBaronResolver.resolve_price(weapon)
+    if sb_price is not None:
+        db.save_resolved_price(PriceHistory('SKINBARON', sb_price))
+        print(f'SKIN BARON {sb_price.lowest_price}€ (lowest) - {sb_price.volume} in Market.')
+        print(f'SKIN BARON {sb_price.highest_price}€ (highest) - {sb_price.volume} in Market.')

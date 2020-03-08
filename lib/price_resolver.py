@@ -24,7 +24,6 @@ class SteamResolver(Resolver):
 
         if data.status_code == 200:
             market_info = json.loads(data.content)
-
             price = 0
 
             if 'lowest_price' in market_info:
@@ -32,13 +31,15 @@ class SteamResolver(Resolver):
 
             volume = int(market_info["volume"])
 
-            result = ResolvedPrice()
-            result.highest_price = price
-            result.lowest_price = price
-            result.volume = volume
-            result.weapon_name = weapon.weapon_name
+            if price > 0:
+                result = ResolvedPrice()
+                result.highest_price = price
+                result.lowest_price = price
+                result.volume = volume
+                result.weapon_name = weapon.weapon_name
 
-            return result
+                return result
+
         return None
 
 
@@ -68,9 +69,12 @@ class SkinBaronResolver(Resolver):
                     if highest_price < single_offer["itemPrice"]:
                         highest_price = single_offer["itemPrice"]
 
-            result = ResolvedPrice()
-            result.lowest_price = lowest_price
-            result.highest_price = highest_price
-            result.volume = len(market_info["aggregatedMetaOffers"])
-            result.weapon_name = weapon.weapon_name
-            return result
+            if lowest_price > 0:
+                result = ResolvedPrice()
+                result.lowest_price = lowest_price
+                result.highest_price = highest_price
+                result.volume = len(market_info["aggregatedMetaOffers"])
+                result.weapon_name = weapon.weapon_name
+                return result
+
+        return None
