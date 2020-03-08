@@ -28,6 +28,8 @@ class SteamResolver(Resolver):
 
             if 'lowest_price' in market_info:
                 price = float(market_info["lowest_price"][:-1].replace(" ", "").replace(",", ".").replace("-", "0"))
+            elif 'median_price' in market_info:
+                price = float(market_info["median_price"][:-1].replace(" ", "").replace(",", ".").replace("-", "0"))
 
             volume = int(market_info["volume"])
 
