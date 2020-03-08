@@ -1,7 +1,7 @@
 # Counter-Strike Global Offensive Price Tracker
 
-from database import Database, PriceHistory
-from price_resolver import SteamResolver, SkinBaronResolver
+from lib.database import Database, PriceHistory
+from lib.price_resolver import SteamResolver, SkinBaronResolver
 
 db = Database()
 

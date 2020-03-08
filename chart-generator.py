@@ -1,38 +1,56 @@
 # Counter-Strike Global Offensive Price Tracker (Chart Generator)
 from datetime import datetime
 
-from database import Database
+from lib import mail
+from lib.database import Database
+# noinspection PyUnresolvedReferences
 from matplotlib import pyplot as plt
 import os
-import mail
 
-WEAPON_NAME = os.getenv('WEAPON_NAME', 'AWP | The Prince (Field-Tested)')
-WEAPON_NAME = WEAPON_NAME.replace("_", " ")
-WEAPON_NAME = WEAPON_NAME.replace("#", "|")
+from datetime import datetime
+from lib.mail import Mail
+
+mail = Mail(f'Counter-Strike Global Offensive - Item Prices (at {datetime.now().strftime("%d.%m.%Y %H:%M")})')
 
 db = Database()
-prices = db.get_resolved_prices(WEAPON_NAME)
+weapons = db.get_weapons()
 
-steamX = []
-skinbaronX = []
-steamY = []
-skinbaronY = []
+charts = []
+weapon_prices = []
 
-for price in prices:
-    date = datetime.fromtimestamp(price.date)
+body = "You'r Items are currently worth:<br><br>"
+for wp in weapons:
+    body += f'<br><img src="cid:chart_{wp.idx}">'
+mail.add_text(body)
 
-    if price.market == 'STEAM':
-        steamX.append(date)
-        steamY.append(price.lowest_price)
-    if price.market == 'SKINBARON':
-        skinbaronX.append(date)
-        skinbaronY.append(price.lowest_price)
+for weapon in weapons:
+    prices = db.get_resolved_prices(weapon.weapon_name)
 
-plt.title(WEAPON_NAME)
-plt.plot(steamX, steamY)
-plt.plot(skinbaronX, skinbaronY)
-plt.legend(['STEAM', 'SKINBARON'])
-plt.ylabel('Price in €')
-plt.savefig('chart.png')
+    steamX = []
+    skinbaronX = []
+    steamY = []
+    skinbaronY = []
 
-mail.send_mail()
+    for price in prices:
+        date = datetime.fromtimestamp(price.date)
+
+        if price.market == 'STEAM':
+            steamX.append(date)
+            steamY.append(price.lowest_price)
+        if price.market == 'SKINBARON':
+            skinbaronX.append(date)
+            skinbaronY.append(price.lowest_price)
+
+    plt.style.use('fast')
+    plt.title(weapon.weapon_name)
+    plt.plot(steamX, steamY, label='STEAM')
+    plt.plot(skinbaronX, skinbaronY, label='SKINBARON')
+    plt.gcf().autofmt_xdate()
+    plt.grid(True)
+    plt.ylabel('Price in €')
+    plt.savefig('chart.png')
+    plt.clf()
+
+    mail.add_image('chart.png', f'chart_{weapon.idx}')
+
+mail.send()

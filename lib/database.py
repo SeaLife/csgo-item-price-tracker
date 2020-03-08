@@ -3,7 +3,7 @@ import sqlite3
 import time
 from typing import List
 
-from price_resolver import ResolvedPrice
+from lib.price_resolver import ResolvedPrice
 
 
 class PriceHistory:
