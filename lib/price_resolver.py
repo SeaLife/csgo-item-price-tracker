@@ -1,18 +1,13 @@
 import requests
 import json
 
+from lib.dto import ResolvedPrice
+
 
 class Resolver:
     @staticmethod
     def resolve_price(weapon):
         pass
-
-
-class ResolvedPrice:
-    weapon_name = ""
-    lowest_price = 0.0
-    highest_price = 0.0
-    volume = 0
 
 
 class SteamResolver(Resolver):

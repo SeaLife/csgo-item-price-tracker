@@ -48,16 +48,3 @@ class Mail:
         print(f">> sending mail to {self.root['To']} via {SMTP_HOST}:{SMTP_PORT}.")
         smtp.sendmail(self.root["From"], self.root["To"], self.root.as_string())
         smtp.quit()
-
-
-def send_mail():
-    mail = Mail(receiver=MAIL_RECEIVER,
-                sender=MAIL_SENDER,
-                subject=f'Counter-Strike Global Offensive - Item Prices (at {datetime.now().strftime("%d.%m.%Y %H:%M")})')
-
-    mail.add_text(
-        f'Hello there. We got {datetime.now().strftime("%d.%m.%Y %H:%M")} and that is what we got so far:<br/><img src="cid:image1"></img>')
-
-    mail.add_image('chart.png', 'image1')
-
-    mail.send()
