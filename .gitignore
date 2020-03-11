@@ -3,4 +3,4 @@ sv.db
 __pycache__/
 .idea/
 .env
-chart.png
+*.png

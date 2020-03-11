@@ -2,24 +2,6 @@ import time
 import logging
 
 
-class Context:
-    __options = {}
-    log = None
-
-    def set_attribute(self, key, val):
-        if val == "":
-            self.__options[key] = True
-        else:
-            self.__options[key] = val
-
-    def get_attribute(self, key, val):
-        return self.__options[key]
-
-    def initialize(self):
-        self.log = logging.getLogger('csgo-item-tracker')
-        self.log.level = logging.DEBUG
-
-
 class ResolvedPrice:
     weapon_name = ""
     lowest_price = 0.0

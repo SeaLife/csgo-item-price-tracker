@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 import time
@@ -6,6 +7,8 @@ from typing import List
 from lib.dto import Weapon, PriceHistory
 from lib.price_resolver import ResolvedPrice
 
+LOG = logging.getLogger("db")
+
 
 class Database:
     def __init__(self):
@@ -13,7 +16,7 @@ class Database:
         self.connection = sqlite3.connect(database_name)
         self.connection.isolation_level = None
         self.connection.row_factory = sqlite3.Row
-        print("DB: ", database_name)
+        LOG.info('Using DB %s', database_name)
         self.create_table()
 
     def create_table(self):
@@ -77,3 +80,8 @@ class Database:
         self.connection.execute('INSERT INTO prices VALUES(?, ?, ?, ?, ?)',
                                 (price_history.weapon_name, price_history.lowest_price, price_history.highest_price,
                                  price_history.date, price_history.market))
+
+    def delete_weapon(self, item_id):
+        self.connection.execute(
+            'DELETE FROM prices WHERE weapon_name = (SELECT weapon_name FROM weapons WHERE rowid = ?)', (item_id,))
+        self.connection.execute('DELETE FROM weapons WHERE rowid = ?', (item_id,))

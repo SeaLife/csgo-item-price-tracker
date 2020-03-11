@@ -26,7 +26,10 @@ class SteamResolver(Resolver):
             elif 'median_price' in market_info:
                 price = float(market_info["median_price"][:-1].replace(" ", "").replace(",", ".").replace("-", "0"))
 
-            volume = int(market_info["volume"])
+            try:
+                volume = int(market_info["volume"])
+            except KeyError:
+                volume = 0
 
             if price > 0:
                 result = ResolvedPrice()

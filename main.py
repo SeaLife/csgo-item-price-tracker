@@ -1,18 +1,50 @@
 import sys
 import getopt
+import logging
 
-from lib.dto import Context
+OPTIONS = {}
+logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s')
+LOG = logging.root
+LOG.level = logging.INFO
 
-ctx = Context()
-
-print(sys.argv)
-
-opts, args = getopt.getopt(sys.argv[1:], "lcr:", ['list', 'create', 'remove'])
-
-print(opts)
+opts, args = getopt.getopt(sys.argv[1:], "svpdlcr:", ['list', 'create', 'remove'])
 
 for opt, arg in opts:
     if opt[:2] == '--':
-        ctx.set_attribute(opt[2:], arg)
+        LOG.debug(f"OPTIONS['{opt[2:]}'] = {arg}")
+        if arg == "":
+            OPTIONS[opt[2:]] = True
+        else:
+            OPTIONS[opt[2:]] = arg
     else:
-        ctx.set_attribute(opt[1:], arg)
+        LOG.debug(f"OPTIONS[{opt[1:]}] = {arg}")
+        if opt[1:] == 'v':
+            LOG.level -= 10
+        if opt[1:] == 's':
+            LOG.level += 10
+
+        if arg == "":
+            OPTIONS[opt[1:]] = True
+        else:
+            OPTIONS[opt[1:]] = arg
+
+if 'p' in OPTIONS:
+    import process
+
+if 'd' in OPTIONS:
+    import chart_generator
+
+if 'c' in OPTIONS:
+    import modify
+
+    modify.create()
+
+if 'l' in OPTIONS:
+    import modify
+
+    modify.list_items()
+
+if 'r' in OPTIONS:
+    import modify
+
+    modify.remove_item(int(OPTIONS['r']))
