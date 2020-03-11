@@ -20,22 +20,30 @@ log = logging.getLogger('chart')
 
 
 class PriceInfo:
-    skin_baron: List[PriceHistory] = []
-    steam: List[PriceHistory] = []
+    skin_baron: List[PriceHistory]
+    steam: List[PriceHistory]
+
+    def __init__(self):
+        self.steam = []
+        self.skin_baron = []
 
     @lru_cache(maxsize=10)
     def avg_steam(self):
         p = 0
         for s in self.steam:
             p += s.lowest_price
-        return p / (len(self.steam))
+        avg = p / (len(self.steam))
+        log.debug("Average price for steam is %s€ (%s prices)", avg, len(self.steam))
+        return avg
 
     @lru_cache(maxsize=10)
     def avg_skin_baron(self):
         p = 0
         for s in self.skin_baron:
             p += s.lowest_price
-        return p / (len(self.skin_baron))
+        avg = p / len(self.skin_baron)
+        log.debug("Average price for skin baron is %s€ (%s prices)", avg, len(self.skin_baron))
+        return avg
 
 
 def prices_from_dates(wp: Weapon, date_format='%Y-%m-%d %H:%M:%S', predicate=lambda t: True):
@@ -46,7 +54,10 @@ def prices_from_dates(wp: Weapon, date_format='%Y-%m-%d %H:%M:%S', predicate=lam
     for p in prices:
         if predicate(p.date) is True:
             date = time.strftime(date_format, time.localtime(p.date))
-            if not date in daily_prices:
+            log.debug("Added PriceInfo from %s from market %s with the price of %s to the storage.", date, p.market,
+                      p.lowest_price)
+
+            if date not in daily_prices:
                 daily_prices[date] = PriceInfo()
 
             if p.market == 'STEAM':
@@ -84,6 +95,8 @@ def generate_charts_for(wp: Weapon, prices: Dict[str, PriceInfo], file_name='cha
     plt.savefig(file_name)
     plt.clf()
 
+    log.info(f"Rendered {file_name} with {len(x_axis)} x values.")
+
 
 def predicate_today():
     date_format = '%Y-%m-%d %H:%M:%S'
@@ -96,6 +109,13 @@ def predicate_this_month():
     date_format = '%Y-%m-%d %H:%M:%S'
     start_of_day = datetime.strptime(time.strftime('%Y-%m-01 00:00:00', time.localtime(time.time())), date_format)
     end_of_day = datetime.strptime(time.strftime('%Y-%m-28 23:59:59', time.localtime(time.time())), date_format)
+    return lambda t: start_of_day <= datetime.fromtimestamp(t) <= end_of_day
+
+
+def predicate_this_year():
+    date_format = '%Y-%m-%d %H:%M:%S'
+    start_of_day = datetime.strptime(time.strftime('%Y-01-01 00:00:00', time.localtime(time.time())), date_format)
+    end_of_day = datetime.strptime(time.strftime('%Y-12-31 23:59:59', time.localtime(time.time())), date_format)
     return lambda t: start_of_day <= datetime.fromtimestamp(t) <= end_of_day
 
 
@@ -120,8 +140,13 @@ for weapon in db.get_weapons():
     # this month
     generate_charts_for(
         wp=weapon,
-        prices=prices_from_dates(weapon, '%Y-%m-%d 12:00:00', predicate=predicate_this_month()),
+        prices=prices_from_dates(weapon, predicate=predicate_this_month()),
         file_name=f'rendered/this_month{weapon.idx}.png')
+    # this year
+    generate_charts_for(
+        wp=weapon,
+        prices=prices_from_dates(weapon, predicate=predicate_this_year()),
+        file_name=f'rendered/this_year{weapon.idx}.png')
 
     body += f'<h3>{weapon.weapon_name}</h3>'
     body += f'Rate: {weapon.wear_from}% -> {weapon.wear_to}%<br>'
@@ -130,6 +155,7 @@ for weapon in db.get_weapons():
     body += f'<b>Charts:</b><br>'
     body += f'<img src="cid:today{weapon.idx}"/>'
     body += f'<img src="cid:this_month{weapon.idx}"/>'
+    body += f'<img src="cid:this_year{weapon.idx}"/>'
     body += f'<img src="cid:monthly{weapon.idx}"/>'
     body += f'<img src="cid:daily{weapon.idx}"/>'
 
@@ -138,6 +164,7 @@ send_mail.add_text(body);
 for wp in db.get_weapons():
     send_mail.add_image(f'rendered/today{wp.idx}.png', f'today{wp.idx}')
     send_mail.add_image(f'rendered/this_month{wp.idx}.png', f'this_month{wp.idx}')
+    send_mail.add_image(f'rendered/this_year{wp.idx}.png', f'this_month{wp.idx}')
     send_mail.add_image(f'rendered/daily{wp.idx}.png', f'daily{wp.idx}')
     send_mail.add_image(f'rendered/monthly{wp.idx}.png', f'monthly{wp.idx}')
 
