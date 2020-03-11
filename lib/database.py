@@ -1,55 +1,13 @@
+import logging
 import os
 import sqlite3
 import time
 from typing import List
 
+from lib.dto import Weapon, PriceHistory
 from lib.price_resolver import ResolvedPrice
 
-
-class PriceHistory:
-    weapon_name = ""
-    lowest_price = 0.0
-    highest_price = 0.0
-    market = ""
-    date = 0
-
-    def __init__(self, market: str = None, resolved_price: ResolvedPrice = None, synced_time: float = time.time()):
-        if resolved_price is not None:
-            self.weapon_name = resolved_price.weapon_name
-            self.lowest_price = resolved_price.lowest_price
-            self.highest_price = resolved_price.highest_price
-        if market is not None:
-            self.market = market
-
-        self.date = int(synced_time)
-
-    def __str__(self):
-        return f'PriceHistory(name={self.weapon_name},lowest={self.lowest_price},highest={self.highest_price},market={self.market},from={self.date})'
-
-    def to_resolved_price(self) -> ResolvedPrice:
-        result = ResolvedPrice()
-        result.weapon_name = self.weapon_name
-        result.highest_price = self.highest_price
-        result.lowest_price = self.lowest_price
-
-        return result
-
-
-class Weapon:
-    idx = 0
-    weapon_name = ""
-    variant_id = 0
-    wear_from = 0
-    wear_to = 0
-    stat_track = False
-
-    def __init__(self, idx=None, name="", variant_id=0, wear_from=0, wear_to=100, stat_track=False):
-        self.idx = idx
-        self.weapon_name = name
-        self.variant_id = variant_id
-        self.wear_from = wear_from
-        self.wear_to = wear_to
-        self.stat_track = stat_track
+LOG = logging.getLogger("db")
 
 
 class Database:
@@ -58,7 +16,7 @@ class Database:
         self.connection = sqlite3.connect(database_name)
         self.connection.isolation_level = None
         self.connection.row_factory = sqlite3.Row
-        print("DB: ", database_name)
+        LOG.info('Using DB %s', database_name)
         self.create_table()
 
     def create_table(self):
@@ -122,3 +80,8 @@ class Database:
         self.connection.execute('INSERT INTO prices VALUES(?, ?, ?, ?, ?)',
                                 (price_history.weapon_name, price_history.lowest_price, price_history.highest_price,
                                  price_history.date, price_history.market))
+
+    def delete_weapon(self, item_id):
+        self.connection.execute(
+            'DELETE FROM prices WHERE weapon_name = (SELECT weapon_name FROM weapons WHERE rowid = ?)', (item_id,))
+        self.connection.execute('DELETE FROM weapons WHERE rowid = ?', (item_id,))

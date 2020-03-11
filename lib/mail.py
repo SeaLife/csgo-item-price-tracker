@@ -1,9 +1,12 @@
+import logging
 import smtplib
 import os
 from datetime import datetime
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+log = logging.getLogger("mail")
 
 SMTP_HOST = os.getenv('MAIL_SMTP_HOST')
 SMTP_PORT = int(os.getenv('MAIL_SMTP_PORT', '587'))
@@ -37,27 +40,20 @@ class Mail:
 
     def send(self):
         smtp = smtplib.SMTP(SMTP_HOST)
-        smtp.connect(SMTP_HOST, SMTP_PORT)
 
-        if SMTP_TLS is True:
-            smtp.ehlo()
-            smtp.starttls()
-            smtp.ehlo()
+        try:
+            smtp.connect(SMTP_HOST, SMTP_PORT)
 
-        smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
-        print(f">> sending mail to {self.root['To']} via {SMTP_HOST}:{SMTP_PORT}.")
-        smtp.sendmail(self.root["From"], self.root["To"], self.root.as_string())
-        smtp.quit()
+            if SMTP_TLS is True:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.ehlo()
 
-
-def send_mail():
-    mail = Mail(receiver=MAIL_RECEIVER,
-                sender=MAIL_SENDER,
-                subject=f'Counter-Strike Global Offensive - Item Prices (at {datetime.now().strftime("%d.%m.%Y %H:%M")})')
-
-    mail.add_text(
-        f'Hello there. We got {datetime.now().strftime("%d.%m.%Y %H:%M")} and that is what we got so far:<br/><img src="cid:image1"></img>')
-
-    mail.add_image('chart.png', 'image1')
-
-    mail.send()
+            log.debug("SMTP authentication as %s", SMTP_USERNAME)
+            smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            log.debug("SMTP sending mail to %s as %s", self.root['To'], self.root['From'])
+            smtp.sendmail(self.root["From"], self.root["To"], self.root.as_string())
+            log.info("Mail sent to %s", self.root['To'])
+            smtp.quit()
+        except ConnectionRefusedError:
+            log.error(f"Failed to send mail, connection was refused (host={SMTP_HOST},port={SMTP_PORT}).")

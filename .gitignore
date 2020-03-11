@@ -3,3 +3,4 @@ sv.db
 __pycache__/
 .idea/
 .env
+rendered/*.png
