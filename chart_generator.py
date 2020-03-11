@@ -18,6 +18,9 @@ send_mail = Mail(f'Counter-Strike Global Offensive - Item Prices (at {datetime.n
 db = Database()
 log = logging.getLogger('chart')
 
+if not os.path.exists('rendered'):
+    os.mkdir('rendered')
+
 
 class PriceInfo:
     skin_baron: List[PriceHistory]
