@@ -108,12 +108,18 @@ def generate_charts_for(wp: Weapon, prices: Dict[str, PriceInfo], file_name='cha
 
 
 def average_prices(prices: Dict[str, PriceInfo]):
+    if len(prices) == 0:
+        return 0, 0
+
     avg_steam = 0
     avg_skinbaron = 0
     for date, price in prices.items():
-        avg_steam += price.avg_steam()
-        avg_skinbaron += price.avg_skin_baron()
-    return avg_steam / len(prices), avg_skinbaron / len(prices)
+        if price.avg_steam() > 0:
+            avg_steam += price.avg_steam()
+        if price.avg_skin_baron() > 0:
+            avg_skinbaron += price.avg_skin_baron()
+
+    return avg_steam / len(prices.items()), avg_skinbaron / len(prices.items())
 
 
 def predicate_today():
@@ -166,7 +172,7 @@ for weapon in db.get_weapons():
         prices=prices_from_dates(weapon, predicate=predicate_this_year()),
         file_name=f'rendered/this_year{weapon.idx}.png')
 
-    sb_price, steam_price = average_prices(prices_from_dates(weapon, predicate=predicate_today()))
+    steam_price, sb_price = average_prices(prices_from_dates(weapon, predicate=predicate_today()))
 
     body += f'<h3>{weapon.weapon_name}</h3>'
     body += f'Rate: {weapon.wear_from}% -> {weapon.wear_to}%<br>'
