@@ -32,6 +32,9 @@ class PriceInfo:
 
     @lru_cache(maxsize=10)
     def avg_steam(self):
+        if len(self.steam) == 0:
+            return 0
+
         p = 0
         for s in self.steam:
             p += s.lowest_price
@@ -41,6 +44,9 @@ class PriceInfo:
 
     @lru_cache(maxsize=10)
     def avg_skin_baron(self):
+        if len(self.skin_baron) == 0:
+            return 0
+
         p = 0
         for s in self.skin_baron:
             p += s.lowest_price
@@ -101,6 +107,15 @@ def generate_charts_for(wp: Weapon, prices: Dict[str, PriceInfo], file_name='cha
     log.info(f"Rendered {file_name} with {len(x_axis)} x values.")
 
 
+def average_prices(prices: Dict[str, PriceInfo]):
+    avg_steam = 0
+    avg_skinbaron = 0
+    for date, price in prices.items():
+        avg_steam += price.avg_steam()
+        avg_skinbaron += price.avg_skin_baron()
+    return avg_steam / len(prices), avg_skinbaron / len(prices)
+
+
 def predicate_today():
     date_format = '%Y-%m-%d %H:%M:%S'
     start_of_day = datetime.strptime(time.strftime('%Y-%m-%d 00:00:00', time.localtime(time.time())), date_format)
@@ -151,23 +166,29 @@ for weapon in db.get_weapons():
         prices=prices_from_dates(weapon, predicate=predicate_this_year()),
         file_name=f'rendered/this_year{weapon.idx}.png')
 
+    sb_price, steam_price = average_prices(prices_from_dates(weapon, predicate=predicate_today()))
+
     body += f'<h3>{weapon.weapon_name}</h3>'
     body += f'Rate: {weapon.wear_from}% -> {weapon.wear_to}%<br>'
     body += f'Variant ID: {weapon.variant_id}<br><br>'
+    body += f'Average today on Skinbaron: {sb_price}€<br>'
+    body += f'Average today on Steam: {steam_price}€<br>'
 
     body += f'<b>Charts:</b><br>'
-    body += f'<img src="cid:today{weapon.idx}"/>'
-    body += f'<img src="cid:this_month{weapon.idx}"/>'
-    body += f'<img src="cid:this_year{weapon.idx}"/>'
-    body += f'<img src="cid:monthly{weapon.idx}"/>'
-    body += f'<img src="cid:daily{weapon.idx}"/>'
+    body += f'<i>Today:</i><br/><img src="cid:today{weapon.idx}"/>'
+    body += f'<i>This month (precise):</i><br/><img src="cid:this_month{weapon.idx}"/>'
+    body += f'<i>This year (precise):</i><br/><img src="cid:this_year{weapon.idx}"/>'
+    body += f'<i>Monthly average:</i><br/><img src="cid:monthly{weapon.idx}"/>'
+    body += f'<i>Daily average:</i><br/><img src="cid:daily{weapon.idx}"/>'
+
+log.debug(body)
 
 send_mail.add_text(body);
 
 for wp in db.get_weapons():
     send_mail.add_image(f'rendered/today{wp.idx}.png', f'today{wp.idx}')
     send_mail.add_image(f'rendered/this_month{wp.idx}.png', f'this_month{wp.idx}')
-    send_mail.add_image(f'rendered/this_year{wp.idx}.png', f'this_month{wp.idx}')
+    send_mail.add_image(f'rendered/this_year{wp.idx}.png', f'this_year{wp.idx}')
     send_mail.add_image(f'rendered/daily{wp.idx}.png', f'daily{wp.idx}')
     send_mail.add_image(f'rendered/monthly{wp.idx}.png', f'monthly{wp.idx}')
 
