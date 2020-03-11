@@ -177,8 +177,8 @@ for weapon in db.get_weapons():
     body += f'<h3>{weapon.weapon_name}</h3>'
     body += f'Rate: {weapon.wear_from}% -> {weapon.wear_to}%<br>'
     body += f'Variant ID: {weapon.variant_id}<br><br>'
-    body += f'Average today on Skinbaron: {sb_price}€<br>'
-    body += f'Average today on Steam: {steam_price}€<br>'
+    body += f'Average today on Skinbaron: {round(sb_price, 2)}€<br>'
+    body += f'Average today on Steam: {round(steam_price)}€<br>'
 
     body += f'<b>Charts:</b><br>'
     body += f'<i>Today:</i><br/><img src="cid:today{weapon.idx}"/>'
