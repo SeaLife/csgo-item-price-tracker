@@ -2,8 +2,9 @@
 import logging
 import os
 import time
-from functools import lru_cache
+import lib.version_checker as version_checker
 
+from functools import lru_cache
 from typing import Dict, List
 from lib.database import Database
 from lib.dto import Weapon, ResolvedPrice, PriceHistory
@@ -145,7 +146,23 @@ def predicate_this_year():
     return lambda t: start_of_day <= datetime.fromtimestamp(t) <= end_of_day
 
 
-body = '<h2>Price Summary</h2><br><br>You\'r price summary is:<br><br>'
+def predicate_this_week():
+    date_format = '%Y-%m-%d %H:%M:%S'
+
+    start_of_day = datetime.strptime(
+        time.strftime('%Y-%m-%d 00:00:00', time.localtime(time.time() - (60 * 60 * 24 * 7))), date_format
+    )
+
+    end_of_day = datetime.strptime(time.strftime('%Y-%m-%d 23:59:59', time.localtime(time.time())), date_format)
+    return lambda t: start_of_day <= datetime.fromtimestamp(t) <= end_of_day
+
+
+is_up_to_date, message = version_checker.check_version()
+body = '<h2>Price Summary</h2>'
+if is_up_to_date is False:
+    body += f'<span style="color: red"><small><i>There is a new version available: {message} (you have: {os.getenv("APP_VERSION", "SNAPSHOT")})</i></small></span><br>'
+
+body += "<br>You\'r price summary is:<br><br>"
 
 for weapon in db.get_weapons():
     # daily
@@ -173,6 +190,11 @@ for weapon in db.get_weapons():
         wp=weapon,
         prices=prices_from_dates(weapon, predicate=predicate_this_year()),
         file_name=f'rendered/this_year{weapon.idx}.png')
+    # current week
+    generate_charts_for(
+        wp=weapon,
+        prices=prices_from_dates(weapon, predicate=predicate_this_week()),
+        file_name=f'rendered/this_week{weapon.idx}.png')
 
     steam_price, sb_price = average_prices(prices_from_dates(weapon, predicate=predicate_today()))
 
@@ -180,16 +202,17 @@ for weapon in db.get_weapons():
     body += f'Rate: {weapon.wear_from}% -> {weapon.wear_to}%<br>'
     body += f'Variant ID: {weapon.variant_id}<br><br>'
     body += f'Average today on Skinbaron: {round(sb_price, 2)}€<br>'
-    body += f'Average today on Steam: {round(steam_price)}€<br>'
+    body += f'Average today on Steam: {round(steam_price)}€<br><br>'
 
     body += f'<b>Charts:</b><br>'
     body += f'<i>Today:</i><br/><img src="cid:today{weapon.idx}"/>'
+    body += f'<i>This Week:</i><br/><img src="cid:this_week{weapon.idx}"/>'
     body += f'<i>This month (precise):</i><br/><img src="cid:this_month{weapon.idx}"/>'
     body += f'<i>This year (precise):</i><br/><img src="cid:this_year{weapon.idx}"/>'
     body += f'<i>Monthly average:</i><br/><img src="cid:monthly{weapon.idx}"/>'
     body += f'<i>Daily average:</i><br/><img src="cid:daily{weapon.idx}"/>'
 
-log.debug(body)
+log.info(body)
 
 send_mail.add_text(body);
 
@@ -199,5 +222,6 @@ for wp in db.get_weapons():
     send_mail.add_image(f'rendered/this_year{wp.idx}.png', f'this_year{wp.idx}')
     send_mail.add_image(f'rendered/daily{wp.idx}.png', f'daily{wp.idx}')
     send_mail.add_image(f'rendered/monthly{wp.idx}.png', f'monthly{wp.idx}')
+    send_mail.add_image(f'rendered/this_week{wp.idx}.png', f'this_week{wp.idx}')
 
 send_mail.send()

@@ -1,7 +1,9 @@
 import sys
 import getopt
 import logging
+from dotenv import load_dotenv
 
+load_dotenv(verbose=True)
 logging.basicConfig(format='%(asctime)s %(levelname)s - %(message)s')
 LOG = logging.root
 LOG.level = logging.INFO
