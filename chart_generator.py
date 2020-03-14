@@ -78,25 +78,27 @@ def prices_from_dates(wp: Weapon, date_format='%Y-%m-%d %H:%M:%S', predicate=lam
 
 
 def generate_charts_for(wp: Weapon, prices: Dict[str, PriceInfo], file_name='chart.png'):
-    x_axis = []
+    x_axis_steam = []
+    x_axis_skinbaron = []
     y_axis_steam = []
     y_axis_skinbaron = []
 
     date_format = '%Y-%m-%d %H:%M:%S'
 
     for d, price_info in prices.items():
-        x_axis.append(datetime.strptime(d, date_format))
         log.debug("%s got entry for %s", file_name, d)
         if price_info.avg_steam() > 0:
+            x_axis_steam.append(datetime.strptime(d, date_format))
             y_axis_steam.append(price_info.avg_steam())
         if price_info.avg_skin_baron() > 0:
+            x_axis_skinbaron.append(datetime.strptime(d, date_format))
             y_axis_skinbaron.append(price_info.avg_skin_baron())
 
     plt.clf()
     plt.suptitle(weapon.weapon_name)
     plt.title(f'(variant_id={weapon.variant_id})')
-    plt.plot(x_axis, y_axis_steam)
-    plt.plot(x_axis, y_axis_skinbaron)
+    plt.plot(x_axis_steam, y_axis_steam)
+    plt.plot(x_axis_skinbaron, y_axis_skinbaron)
     plt.legend(['STEAM', 'SKINBARON'])
     plt.gcf().autofmt_xdate()
     plt.grid(True)
@@ -104,7 +106,7 @@ def generate_charts_for(wp: Weapon, prices: Dict[str, PriceInfo], file_name='cha
     plt.savefig(file_name)
     plt.clf()
 
-    log.info(f"Rendered {file_name} with {len(x_axis)} x values.")
+    log.info(f"Rendered {file_name} with {len(x_axis_steam)}/{len(x_axis_skinbaron)} x values.")
 
 
 def average_prices(prices: Dict[str, PriceInfo]):
